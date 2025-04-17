@@ -2,7 +2,8 @@
 projects/
 temp/
 .vscode/
-.ipynb 
+
+*.ipynb 
 
 ### Linux ###
 *~
