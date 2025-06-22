@@ -193,9 +193,6 @@ def main(input_output_pairs):
         # 加載文件(Podcast逐字稿)
         documents = load_documents(input_dir)
         print(f"Loaded documents: {len(documents)}")
-        print(type (documents))
-        print(f"document1: {documents[0]}")
-        qwe
         # 分割成文本塊
         chunks = split_documents(documents)
         print(f"Number of chunks: {len(chunks)}")
