@@ -182,10 +182,20 @@ def load_FAISS_vectorstore(vectorstore_path):
         print(f"Vector store not found at {vectorstore_path}")
         vectorstore = None
     return vectorstore
-
+  
+def generate_input_output_pairs(input_root, output_root):
+    subfolders = [
+        name for name in os.listdir(input_root)
+        if os.path.isdir(os.path.join(input_root, name))
+    ]
+    
+    pairs = [
+        (os.path.join(input_root, name), os.path.join(output_root, name))
+        for name in subfolders
+    ]
+    return pairs
 
 # 執行建立向量庫主程式
-
 def main(input_output_pairs):
     for input_dir, output_dir in input_output_pairs:
         print(f"Processing directory: {input_dir}")
@@ -198,15 +208,13 @@ def main(input_output_pairs):
         print(f"Number of chunks: {len(chunks)}")
         
         # 創建向量庫
-        vectorstore_faiss = create_FAISS_vectorstore(chunks, output_dir, batch_size=512)
+        create_FAISS_vectorstore(chunks, output_dir, batch_size=512)
         print(f"Vector store created and saved to: {output_dir}")
         print("-----------------------------")
-
+        
 if __name__ == "__main__":
-    # Input(文本) / output(向量庫) 路徑
-    input_output_pairs = [
-        (r"/home/sylvia2004/projects/PodcastLLM/轉錄文本存放區", 
-         r"/home/sylvia2004/projects/PodcastLLM/vector_store"),
-    ]
+    
+    input_output_pairs = generate_input_output_pairs(r"/home/sylvia2004/projects/PodcastLLM/轉錄文本存放區", r"/home/sylvia2004/projects/PodcastLLM/vector_store")
+    
     
     main(input_output_pairs)
