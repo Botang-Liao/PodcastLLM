@@ -249,7 +249,7 @@ def main(use_cpu=False):
         return overlap >= threshold
 
     with gr.Blocks() as iface:
-        gr.Markdown(f"## 目前資料庫中的節目有：\n{get_program_list('./vectore_store')}\n\n請在下方提問：")
+        gr.Markdown(f"## 目前資料庫中的節目有：\n{get_program_list('./vector_store')}\n\n請在下方提問：")
 
         chatbot = gr.ChatInterface(
             chat_function,
