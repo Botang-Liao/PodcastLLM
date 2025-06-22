@@ -9,7 +9,7 @@ ollama serve
 2. 下載所需要的LLM
 Example :
 ```bash
-ollama pull llama3:8b
+ollama pull deepseek-r1:14b
 ```
 3. 可檢查是否有安裝成功
 ```bash

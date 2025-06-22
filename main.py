@@ -63,7 +63,7 @@ def retrieve_from_multiple_stores(vectorstores, query, k=5, fetch_k=100):
 
 ### 定義ollama類別
 class ChatOllama(BaseLLM):
-    model_name: str = "llama3:8b"
+    model_name: str = "deepseek-r1:14b"
     url: str = "http://localhost:11434/api/generate"
 
     def _call(
@@ -77,7 +77,8 @@ class ChatOllama(BaseLLM):
             "model": self.model_name,
             "prompt": prompt
         }
-        
+        print('[q]')
+        print(data)
         response = requests.post(self.url, json=data)
         if response.status_code == 200:
             full_response = ""
@@ -88,6 +89,7 @@ class ChatOllama(BaseLLM):
                         full_response += json_response.get('response', '')
                     except json.JSONDecodeError:
                         print(f"Error decoding JSON: {line}")
+            print('[a]'+full_response)
             return full_response
         else:
             raise RuntimeError(f"Error: {response.status_code}\n{response.text}")
@@ -113,11 +115,11 @@ class ChatOllama(BaseLLM):
 
 def setup_qa_chain(use_cpu=False):
     
-    ollama_chat = ChatOllama(model_name='llama3:8b') #可換模型
+    ollama_chat = ChatOllama(model_name='deepseek-r1:14b') #可換模型
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
     
     # 使用新的FAISS檢索邏輯，並傳入 use_cpu 參數
-    parent_directory = r"C:\Users\stanl\OneDrive\文件\GitHub\Podcast-\VectoreStore_1"  # 更新為您的向量庫目錄
+    parent_directory = r"/home/sylvia2004/projects/PodcastLLM/VectoreStore_sample"  # 更新為您的向量庫目錄
     embeddings = create_embeddings(use_cpu)
     vectorstores = load_vectorstores_from_directory(parent_directory, embeddings)
     

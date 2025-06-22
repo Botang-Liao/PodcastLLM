@@ -102,7 +102,7 @@ def create_embeddings(use_cpu=False):
         model_kwargs={'device': device}
     )
 
-def create_FAISS_vectorstore(chunks, vectorstore_path=None, batch_size=1000, max_batches_per_run=10, use_cpu=False):
+def create_FAISS_vectorstore(chunks, vectorstore_path=None, batch_size=100, max_batches_per_run=1, use_cpu=False):
     embeddings = create_embeddings(use_cpu)
 
     if not chunks:
@@ -157,11 +157,11 @@ def create_FAISS_vectorstore(chunks, vectorstore_path=None, batch_size=1000, max
             torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
             # 重新加載向量庫和嵌入
-            if vectorstore_path and os.path.exists(vectorstore_path):
-                embeddings = create_embeddings(use_cpu)
-                vectorstore = FAISS.load_local(vectorstore_path, embeddings, allow_dangerous_deserialization=True)
-            else:
-                embeddings = create_embeddings(use_cpu)
+            #if vectorstore_path and os.path.exists(vectorstore_path):
+                #embeddings = create_embeddings(use_cpu)
+                #vectorstore = FAISS.load_local(vectorstore_path, embeddings, allow_dangerous_deserialization=True)
+            #else:
+                #embeddings = create_embeddings(use_cpu)
 
         print("Vector store creation completed")
         return vectorstore
@@ -193,7 +193,9 @@ def main(input_output_pairs):
         # 加載文件(Podcast逐字稿)
         documents = load_documents(input_dir)
         print(f"Loaded documents: {len(documents)}")
-        
+        print(type (documents))
+        print(f"document1: {documents[0]}")
+        qwe
         # 分割成文本塊
         chunks = split_documents(documents)
         print(f"Number of chunks: {len(chunks)}")
@@ -206,8 +208,8 @@ def main(input_output_pairs):
 if __name__ == "__main__":
     # Input(文本) / output(向量庫) 路徑
     input_output_pairs = [
-        (r"D:\Podcast_mp3存放區\轉錄文本存放區", 
-         r"D:\Podcast_mp3存放區\向量庫"),
+        (r"/home/sylvia2004/projects/PodcastLLM/轉錄文本存放區", 
+         r"/home/sylvia2004/projects/PodcastLLM/vector_store"),
     ]
     
     main(input_output_pairs)
