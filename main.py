@@ -24,7 +24,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 k = 5
 fetch_k = 100
 
-cc = OpenCC('s2twp')
+cc = OpenCC('s2t')
 
 def create_embeddings(use_cpu=False):
     device = "cpu" if use_cpu else ("cuda" if torch.cuda.is_available() else "cpu")
