@@ -164,6 +164,7 @@ def setup_qa_chain(use_cpu=False):
 6. **資訊限制**：不要添加任何檢索資料中沒有的信息。
 7. **格式問題**: 請不要使用刪除線或任何其他特殊格式標記在你的回答中。
 8. **記憶**: 如果使用者希望接續前面的問答再次提問，系統應該能夠檢索並提供對話紀錄（chat_history），並根據這些紀錄回答使用者的問題。
+9. 請用繁體中文回答問題。
 請根據上述指南回答問題：
 """
 
@@ -183,6 +184,7 @@ def setup_qa_chain(use_cpu=False):
             "document_prompt": document_prompt
         }
     )
+    traditional_text = cc.convert(qa_)
 
     return qa_chain, custom_retriever
 
