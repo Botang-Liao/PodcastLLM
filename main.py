@@ -16,12 +16,15 @@ import json
 import heapq
 from typing import Any, List, Mapping, Optional
 from pydantic import Field
+from opencc import OpenCC
 
 # 設置環境變數以禁用 tokenizers 的並行處理
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 k = 5
 fetch_k = 100
+
+cc = OpenCC('s2twp')
 
 def create_embeddings(use_cpu=False):
     device = "cpu" if use_cpu else ("cuda" if torch.cuda.is_available() else "cpu")
@@ -164,7 +167,6 @@ def setup_qa_chain(use_cpu=False):
 6. **資訊限制**：不要添加任何檢索資料中沒有的信息。
 7. **格式問題**: 請不要使用刪除線或任何其他特殊格式標記在你的回答中。
 8. **記憶**: 如果使用者希望接續前面的問答再次提問，系統應該能夠檢索並提供對話紀錄（chat_history），並根據這些紀錄回答使用者的問題。
-9. 請用繁體中文回答問題。
 請根據上述指南回答問題：
 """
 
@@ -184,8 +186,7 @@ def setup_qa_chain(use_cpu=False):
             "document_prompt": document_prompt
         }
     )
-    traditional_text = cc.convert(qa_)
-
+    
     return qa_chain, custom_retriever
 
 # 修改主函數以接受 use_cpu 參數
@@ -213,7 +214,7 @@ def main(use_cpu=False):
 
             results = retriever.invoke(message)
             response = qa_chain.invoke({"question": message, "chat_history": history if is_related else []})
-            answer = response['answer']
+            answer = response['answer']     
 
             unique_sources = set()
             for result in results:
@@ -226,8 +227,9 @@ def main(use_cpu=False):
                 sources_str += f"Result {idx}: {episode_name}, {podcast_name}\n"
 
             full_response = f"{answer}\n\n{sources_str}"
-
-            return full_response
+            traditional_full_response = cc.convert(full_response)
+            
+            return traditional_full_response
 
         except Exception as e:
             error_message = f"發生錯誤: {str(e)}\n很抱歉，我無法處理您的問題。請再試一次或換個問題。"
