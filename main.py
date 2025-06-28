@@ -1,3 +1,4 @@
+import time
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate, ChatPromptTemplate
@@ -212,8 +213,16 @@ def main(use_cpu=False):
                 # 不相關則清除
                 qa_chain.memory.clear()
 
+            t1 = time.time()
             results = retriever.invoke(message)
+            t2 = time.time()
+            vectorstore_time = t2 - t1
+            
+            t3 = time.time()
             response = qa_chain.invoke({"question": message, "chat_history": history if is_related else []})
+            t4 = time.time()
+            llm_time = t4 - t3
+        
             answer = response['answer']     
 
             unique_sources = set()
@@ -229,7 +238,9 @@ def main(use_cpu=False):
             full_response = f"{answer}\n\n{sources_str}"
             traditional_full_response = cc.convert(full_response)
             
-            return traditional_full_response
+            timing_info = f"\n---\n向量檢索時間: {vectorstore_time:.2f} 秒\nLLM 生成時間: {llm_time:.2f} 秒"
+            
+            return traditional_full_response + timing_info
 
         except Exception as e:
             error_message = f"發生錯誤: {str(e)}\n很抱歉，我無法處理您的問題。請再試一次或換個問題。"
