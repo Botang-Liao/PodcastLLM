@@ -18,6 +18,7 @@ import heapq
 from typing import Any, List, Mapping, Optional
 from pydantic import Field
 from opencc import OpenCC
+from parse import *
 
 # 設置環境變數以禁用 tokenizers 的並行處理
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -206,11 +207,9 @@ def main(use_cpu=False):
 
     def chat_function(message, history):
         try:
-            # 檢查新的問題是否與對話歷史相關
-            is_related = check_relevance(message, history)
 
+            is_related = check_relevance(message, history)
             if not is_related:
-                # 不相關則清除
                 qa_chain.memory.clear()
 
             t1 = time.time()
@@ -218,18 +217,32 @@ def main(use_cpu=False):
             t2 = time.time()
             vectorstore_time = t2 - t1
             
+            unique_sources = set()
+            context_snippets = []
+
+            for result in results:
+                page_content = result.page_content.strip()
+                episode_name = result.metadata.get('episode_name', 'Unknown Episode')
+                podcast_name = result.metadata.get('Podcast_name', 'Unknown Podcast')
+                context_snippets.append(f"內容：{page_content}\n來源：{episode_name}, {podcast_name}")
+                unique_sources.add((episode_name, podcast_name))
+            
+            sources_str = "\n可參考下方節目集數：\n"
+            for idx, (ep, pod) in enumerate(unique_sources, 1):
+                sources_str += f"Result {idx}: {ep}, {pod}\n"
+
+            output = "\n--- 向量資料庫檢索結果 ---\n" + "\n\n".join(context_snippets[:5]) + "\n\n" + sources_str
+            output += f"\n---\n向量檢索時間: {vectorstore_time:.2f} 秒"
+
+            if args.retrieveOnly:
+                return cc.convert(output)
+            
             t3 = time.time()
             response = qa_chain.invoke({"question": message, "chat_history": history if is_related else []})
             t4 = time.time()
             llm_time = t4 - t3
         
             answer = response['answer']     
-
-            unique_sources = set()
-            for result in results:
-                episode_name = result.metadata.get('episode_name', 'Unknown Episode')
-                podcast_name = result.metadata.get('Podcast_name', 'Unknown Podcast')
-                unique_sources.add((episode_name, podcast_name))
 
             sources_str = "\n可參考下方節目集數：\n"
             for idx, (episode_name, podcast_name) in enumerate(unique_sources, 1):
