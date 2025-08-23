@@ -71,7 +71,7 @@ def retrieve_from_multiple_stores(vectorstores, query, k=5, fetch_k=100):
 class ChatOllama(BaseLLM):
     model_name: str = "deepseek-r1:14b"
     url: str = "http://163.14.137.59:11434/api/generate"
-    stream: bool = False          # 建議先關串流，穩定性較高
+    do_stream: bool = False
     timeout_sec: int = 120
 
     def _call(
@@ -81,29 +81,28 @@ class ChatOllama(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        data = {
+        payload = {
             "model": self.model_name,
             "prompt": prompt,
-            "stream": self.stream
+            "stream": self.do_stream,
         }
-        print('[q]', data)
+        print('[q]', payload)
 
         try:
             resp = requests.post(
                 self.url,
-                json=data,
+                json=payload,
                 timeout=self.timeout_sec,
                 headers={"Accept": "application/json", "Content-Type": "application/json"},
+                stream=self.do_stream,   # 串流模式時打開串流
             )
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f"[Ollama] connection error: {e}")
 
-        # 200 但「空回應」或代理直接關連線時，resp.text 可能是空字串
         if resp.status_code != 200:
             raise RuntimeError(f"[Ollama] HTTP {resp.status_code}: {resp.text[:500]}")
 
-        # 非串流：一次給完整 JSON
-        if not self.stream:
+        if not self.do_stream:
             try:
                 obj = resp.json()
                 ans = obj.get("response", "")
@@ -112,28 +111,24 @@ class ChatOllama(BaseLLM):
             except Exception as e:
                 raise RuntimeError(f"[Ollama] invalid JSON: {e}. body={resp.text[:500]}")
 
-        # 串流（JSONL）：逐行累積
         full = ""
-        for line in resp.text.splitlines():
-            if not line.strip():
-                continue
-            try:
-                obj = json.loads(line)
-                full += obj.get("response", "")
-            except json.JSONDecodeError:
-                # 有些代理會插入非 JSON 的雜訊；忽略並列印
-                print(f"[Ollama] decode error line: {line[:200]}")
-                continue
+        try:
+            for line in resp.iter_lines(decode_unicode=True):
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    full += obj.get("response", "")
+                except json.JSONDecodeError:
+                    print(f"[Ollama] decode error line: {line[:200]}")
+                    continue
+        finally:
+            resp.close()
         print('[a]', full)
         return full
 
-    def _generate(
-        self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> LLMResult:
+    def _generate(self, prompts: List[str], stop: Optional[List[str]] = None,
+                  run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any) -> LLMResult:
         generations = []
         for prompt in prompts:
             response = self._call(prompt, stop, run_manager, **kwargs)
