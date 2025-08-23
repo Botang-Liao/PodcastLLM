@@ -1,3 +1,4 @@
+
 import time
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
@@ -69,7 +70,9 @@ def retrieve_from_multiple_stores(vectorstores, query, k=5, fetch_k=100):
 ### 定義ollama類別
 class ChatOllama(BaseLLM):
     model_name: str = "deepseek-r1:14b"
-    url: str = "http://localhost:11434/api/generate"
+    url: str = "http://163.14.137.59:11434/api/generate"
+    stream: bool = False          # 建議先關串流，穩定性較高
+    timeout_sec: int = 120
 
     def _call(
         self,
@@ -80,24 +83,49 @@ class ChatOllama(BaseLLM):
     ) -> str:
         data = {
             "model": self.model_name,
-            "prompt": prompt
+            "prompt": prompt,
+            "stream": self.stream
         }
-        print('[q]')
-        print(data)
-        response = requests.post(self.url, json=data)
-        if response.status_code == 200:
-            full_response = ""
-            for line in response.text.split('\n'):
-                if line:
-                    try:
-                        json_response = json.loads(line)
-                        full_response += json_response.get('response', '')
-                    except json.JSONDecodeError:
-                        print(f"Error decoding JSON: {line}")
-            print('[a]'+full_response)
-            return full_response
-        else:
-            raise RuntimeError(f"Error: {response.status_code}\n{response.text}")
+        print('[q]', data)
+
+        try:
+            resp = requests.post(
+                self.url,
+                json=data,
+                timeout=self.timeout_sec,
+                headers={"Accept": "application/json", "Content-Type": "application/json"},
+            )
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"[Ollama] connection error: {e}")
+
+        # 200 但「空回應」或代理直接關連線時，resp.text 可能是空字串
+        if resp.status_code != 200:
+            raise RuntimeError(f"[Ollama] HTTP {resp.status_code}: {resp.text[:500]}")
+
+        # 非串流：一次給完整 JSON
+        if not self.stream:
+            try:
+                obj = resp.json()
+                ans = obj.get("response", "")
+                print('[a]', ans)
+                return ans
+            except Exception as e:
+                raise RuntimeError(f"[Ollama] invalid JSON: {e}. body={resp.text[:500]}")
+
+        # 串流（JSONL）：逐行累積
+        full = ""
+        for line in resp.text.splitlines():
+            if not line.strip():
+                continue
+            try:
+                obj = json.loads(line)
+                full += obj.get("response", "")
+            except json.JSONDecodeError:
+                # 有些代理會插入非 JSON 的雜訊；忽略並列印
+                print(f"[Ollama] decode error line: {line[:200]}")
+                continue
+        print('[a]', full)
+        return full
 
     def _generate(
         self,
@@ -115,8 +143,6 @@ class ChatOllama(BaseLLM):
     @property
     def _llm_type(self) -> str:
         return "chat_ollama"
-
-
 
 def setup_qa_chain(use_cpu=False):
     
