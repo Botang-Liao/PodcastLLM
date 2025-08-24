@@ -1,6 +1,4 @@
 import argparse
-
-
 from config import AppSettings
 from embeddings import HFEmbeddingsProvider
 from vectorstores import VectorStoreLoader

@@ -2,7 +2,7 @@ from __future__ import annotations
 import os
 from typing import List, Tuple
 import gradio as gr
-from ..service import ChatService
+from service import ChatService
 
 class GradioUI:
     def __init__(self, chat_service: ChatService, program_dir: str) -> None:

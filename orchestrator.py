@@ -4,8 +4,8 @@ from typing import List, Tuple
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import BaseRetriever
-from .llm.ollama import ChatOllamaLLM
-from .prompts import PromptFactory
+from llm.ollama import ChatOllamaLLM
+from prompts import PromptFactory
 
 class QAOrchestrator:
     def __init__(

@@ -2,7 +2,7 @@ from __future__ import annotations
 import os
 from typing import List, Optional
 from langchain_community.vectorstores import FAISS
-from .embeddings import EmbeddingsProvider
+from embeddings import EmbeddingsProvider
 
 
 class VectorStoreLoader:

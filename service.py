@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import List, Tuple
 from opencc import OpenCC
-from .orchestrator import QAOrchestrator
-from .relevance import RelevancePolicy
+from orchestrator import QAOrchestrator
+from relevance import RelevancePolicy
 
 class ChatService:
     def __init__(self, orchestrator: QAOrchestrator, relevance: RelevancePolicy, retrieve_only: bool) -> None:
